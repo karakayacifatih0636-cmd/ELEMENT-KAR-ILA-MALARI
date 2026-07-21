@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Element Arenası - Şehir Savaşı</title>
+    <title>Element Arenası - Yeşil Şehir Savaşı</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #0f0f1a; color: #fff; text-align: center; overflow: hidden; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        body { background: #1a2a1a; color: #fff; text-align: center; overflow: hidden; }
         
         #ui-bar {
             position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-            background: rgba(20, 20, 35, 0.95); padding: 12px 25px; border-radius: 10px;
-            display: flex; gap: 20px; z-index: 10; font-weight: bold; border: 1px solid #333;
+            background: rgba(20, 35, 20, 0.95); padding: 12px 25px; border-radius: 10px;
+            display: flex; gap: 20px; z-index: 10; font-weight: bold; border: 1px solid #446644;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5); align-items: center;
         }
 
@@ -21,11 +21,11 @@
         }
         .shop-btn:hover { background: #e68a00; }
 
-        #gameCanvas { background: #181824; display: block; cursor: crosshair; }
+        #gameCanvas { background: #2d5a27; display: block; cursor: crosshair; }
 
         .modal {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(10, 10, 20, 0.95); display: flex; flex-direction: column;
+            background: rgba(10, 20, 10, 0.95); display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 20;
         }
 
@@ -34,14 +34,14 @@
 
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         .card { 
-            background: #1f1f33; border: 2px solid #3d3d66; padding: 20px; border-radius: 12px; 
+            background: #1f331f; border: 2px solid #3d663d; padding: 20px; border-radius: 12px; 
             cursor: pointer; width: 220px; transition: transform 0.2s, border-color 0.2s;
             display: flex; flex-direction: column; align-items: center; justify-content: space-between;
         }
-        .card:hover { border-color: #ff9800; transform: translateY(-3px); background: #2a2a45; }
+        .card:hover { border-color: #ff9800; transform: translateY(-3px); background: #2a452a; }
 
         .shop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; max-width: 1000px; }
-        .shop-card { background: #161626; border: 1px solid #444; padding: 15px; border-radius: 8px; text-align: center; }
+        .shop-card { background: #162616; border: 1px solid #446644; padding: 15px; border-radius: 8px; text-align: center; }
         
         .buy-btn { background: #4caf50; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; }
         .select-btn { background: #2196f3; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; }
@@ -50,11 +50,29 @@
 
         .close-btn { background: #f44336; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; margin-top: 20px; font-weight: bold; }
 
-        .controls-hint {
-            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 20px; font-size: 0.85rem; color: #ccc;
-            border: 1px solid #333;
+        /* EKRAN KONTROL BUTONLARI */
+        .touch-controls { position: absolute; bottom: 20px; z-index: 15; pointer-events: none; width: 100%; height: 100%; top: 0; left: 0; }
+        .dpad { position: absolute; bottom: 20px; left: 20px; width: 160px; height: 160px; pointer-events: auto; }
+        .dbtn { 
+            position: absolute; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4); 
+            color: #fff; font-weight: bold; border-radius: 10px; display: flex; justify-content: center; 
+            align-items: center; cursor: pointer; touch-action: manipulation;
         }
+        .dbtn:active { background: rgba(255,255,255,0.5); }
+        .dbtn-w { top: 0; left: 55px; width: 50px; height: 50px; }
+        .dbtn-a { top: 55px; left: 0; width: 50px; height: 50px; }
+        .dbtn-s { top: 110px; left: 55px; width: 50px; height: 50px; }
+        .dbtn-d { top: 55px; left: 110px; width: 50px; height: 50px; }
+        .dbtn-shift { top: 55px; left: 55px; width: 50px; height: 50px; font-size: 0.7rem; background: rgba(255,152,0,0.3); }
+
+        .skill-btns { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 15px; pointer-events: auto; }
+        .sbtn { 
+            width: 60px; height: 60px; border-radius: 50%; background: rgba(33, 150, 243, 0.4); 
+            border: 2px solid #2196f3; color: white; font-size: 1.2rem; font-weight: bold; 
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); touch-action: manipulation;
+        }
+        .sbtn:active { transform: scale(0.95); background: rgba(33, 150, 243, 0.8); }
 
         .hidden { display: none !important; }
     </style>
@@ -78,7 +96,7 @@
             </div>
             <div class="card" onclick="selectStarter('Su')">
                 <h3>💧 Su</h3>
-                <span style="font-size:0.8rem; color:#aaa;">Can Yenileme</span>
+                <span style="font-size:0.8rem; color:#aaa;">Dalga & Top Saldırısı</span>
             </div>
             <div class="card" onclick="selectStarter('Hava')">
                 <h3>🌪️ Hava</h3>
@@ -100,8 +118,19 @@
 
     <canvas id="gameCanvas"></canvas>
 
-    <div class="controls-hint">
-        <b>Hareket:</b> WASD | <b>Koşma:</b> Shift | <b>Ateş:</b> Sol Tık | <b>Yetenekler:</b> Q, E, R | <b>Mağaza:</b> M
+    <div class="touch-controls">
+        <div class="dpad">
+            <div class="dbtn dbtn-w" onmousedown="setKey('w', true)" onmouseup="setKey('w', false)" ontouchstart="setKey('w', true)" ontouchend="setKey('w', false)">W</div>
+            <div class="dbtn dbtn-a" onmousedown="setKey('a', true)" onmouseup="setKey('a', false)" ontouchstart="setKey('a', true)" ontouchend="setKey('a', false)">A</div>
+            <div class="dbtn dbtn-s" onmousedown="setKey('s', true)" onmouseup="setKey('s', false)" ontouchstart="setKey('s', true)" ontouchend="setKey('s', false)">S</div>
+            <div class="dbtn dbtn-d" onmousedown="setKey('d', true)" onmouseup="setKey('d', false)" ontouchstart="setKey('d', true)" ontouchend="setKey('d', false)">D</div>
+            <div class="dbtn dbtn-shift" onmousedown="setKey('shift', true)" onmouseup="setKey('shift', false)" ontouchstart="setKey('shift', true)" ontouchend="setKey('shift', false)">HIZ</div>
+        </div>
+        <div class="skill-btns">
+            <div class="sbtn" onclick="triggerSkill('Q')">Q</div>
+            <div class="sbtn" onclick="triggerSkill('E')">E</div>
+            <div class="sbtn" onclick="triggerSkill('R')">R</div>
+        </div>
     </div>
 
     <script>
@@ -124,15 +153,15 @@
             x: MAP_SIZE / 2,
             y: MAP_SIZE / 2,
             radius: 16,
-            color: "#00ffcc",
+            color: "#00d2ff",
             baseSpeed: 4.5,
             speed: 4.5,
             hp: 100,
             maxHp: 100,
-            elementId: 'starter',
-            elementName: 'Ateş',
-            bulletDamage: 30,
-            bulletColor: "#ff9800",
+            elementId: 'su',
+            elementName: '💧 Su',
+            bulletDamage: 35,
+            bulletColor: "#00d2ff",
             trail: [],
             frozenUntil: 0,
             weakenedUntil: 0,
@@ -147,8 +176,15 @@
         const bullets = [];
         const playerClones = [];
 
-        // MAĞAZA LİSTESİ - Ucuzdan Pahalıya Sıralı
+        function setKey(k, state) {
+            keys[k] = state;
+        }
+
         const shopItems = [
+            { 
+                id: 'su', name: '💧 Su', price: 150, damage: 35, color: '#00d2ff', bought: true,
+                skills: { Q: "1. 5 Su Topu", E: "2. Dev Su Dalga", R: "3. Dev Su Topları" }
+            },
             { 
                 id: 'yildirim', name: '⚡ Yıldırım', price: 250, damage: 45, color: '#e040fb', bought: false,
                 skills: { Q: "1. Yıldırım Çaktır", E: "2. Yıldırım Okları", R: "3. Her Yere Yıldırım" }
@@ -191,7 +227,7 @@
             }
         }
 
-        function createNPC(type, isBoss = false) {
+        function createNPC(type) {
             let name = "", color = "#aaa", weapon = "normal", hp = 100, radius = 16, speed = 2;
 
             if (type === 'murat') { name = "Murat " + muratCount++; color = "#e53935"; weapon = "sword"; }
@@ -199,6 +235,7 @@
             else if (type === 'hasan') { name = "Hasan " + hasanCount++; color = "#4caf50"; weapon = "normal"; }
             else if (type === 'kral_murat') { name = "👑 Kral Murat (BOSS)"; color = "#b71c1c"; weapon = "sword"; hp = 2500; radius = 32; speed = 2.8; }
             else if (type === 'kral_ruzgar') { name = "👑 Kral Rüzgar (2. BOSS)"; color = "#006064"; weapon = "bow"; hp = 1800; radius = 28; speed = 3.2; }
+            else if (type === 'kral_hasan') { name = "👑 Kral Hasan (3. BOSS)"; color = "#2e7d32"; weapon = "normal"; hp = 2200; radius = 30; speed = 2.5; }
 
             npcs.push({
                 id: "bot_" + Math.random(), name: name, type: type, weapon: weapon,
@@ -210,8 +247,9 @@
         }
 
         function spawnInitialNPCs() {
-            createNPC('kral_murat', true);
-            createNPC('kral_ruzgar', true);
+            createNPC('kral_murat');
+            createNPC('kral_ruzgar');
+            createNPC('kral_hasan'); // 👑 HASAN BOSS
             for (let i = 0; i < 8; i++) createNPC('murat');
             for (let i = 0; i < 8; i++) createNPC('ruzgar');
             for (let i = 0; i < 8; i++) createNPC('hasan');
@@ -232,6 +270,7 @@
 
         function selectStarter(elem) {
             player.elementName = elem;
+            if(elem === 'Su') equipItem('su');
             document.getElementById("elementText").innerText = elem;
             document.getElementById("starterModal").classList.add("hidden");
             
@@ -246,7 +285,6 @@
             document.getElementById("shopModal").classList.toggle("hidden");
         }
 
-        // MAĞAZA EKRANI VE BUTON DURUMLARI (Seç, Seçildi, Satın Al, Kilitli)
         function renderShop() {
             const shopGrid = document.getElementById("shopGrid");
             shopGrid.innerHTML = "";
@@ -255,9 +293,7 @@
                 const card = document.createElement("div");
                 card.className = "shop-card";
                 
-                // Kilit Mantığı: Önceki item satın alınmadıysa kilitli kalır
                 let isUnlocked = (index === 0) || shopItems[index - 1].bought;
-
                 let actionButtonHtml = "";
 
                 if (item.bought) {
@@ -309,11 +345,30 @@
         }
 
         function triggerSkill(key) {
+            if (!gameRunning) return;
             const now = Date.now();
             const worldMouseX = mouse.x + camera.x;
             const worldMouseY = mouse.y + camera.y;
 
-            if (player.elementId === 'yildirim') {
+            // 💧 SU ELEMENTİ YETENEKLERİ
+            if (player.elementId === 'su') {
+                if (key === 'Q') { // 1. 5 Tane Su Topu At
+                    for (let i = -2; i <= 2; i++) {
+                        let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x) + (i * 0.15);
+                        bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*12, vy: Math.sin(angle)*12, radius: 8, color: '#00d2ff', damage: 40 });
+                    }
+                } else if (key === 'E') { // 2. Dev Su Dalga (Tsunami)
+                    let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
+                    bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*9, vy: Math.sin(angle)*9, radius: 35, color: '#0099ff', damage: 150 });
+                } else if (key === 'R') { // 3. Dev Su Topları
+                    for (let i = -1; i <= 1; i++) {
+                        let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x) + (i * 0.3);
+                        bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*8, vy: Math.sin(angle)*8, radius: 25, color: '#0044ff', damage: 180 });
+                    }
+                }
+            }
+            // ⚡ YILDIRIM
+            else if (player.elementId === 'yildirim') {
                 if (key === 'Q') shootLightningStrike(worldMouseX, worldMouseY, 120);
                 else if (key === 'E') {
                     for (let i = -2; i <= 2; i++) {
@@ -322,11 +377,13 @@
                     }
                 } else if (key === 'R') npcs.forEach(npc => shootLightningStrike(npc.x, npc.y, 100));
             }
+            // 🌩️ ŞİMŞEK
             else if (player.elementId === 'simsek') {
                 if (key === 'Q') { player.speedMultiplier = 2.5; setTimeout(() => player.speedMultiplier = 1, 4000); }
                 else if (key === 'E') shootLightningStrike(worldMouseX, worldMouseY, 250, '#ffeb3b');
                 else if (key === 'R') { player.bulletDamage *= 2; setTimeout(() => player.bulletDamage /= 2, 6000); }
             }
+            // ❄️ BUZ
             else if (player.elementId === 'buz') {
                 if (key === 'Q') npcs.forEach(npc => { if (Math.hypot(npc.x - player.x, npc.y - player.y) < 350) npc.frozenUntil = now + 3500; });
                 else if (key === 'E') {
@@ -339,6 +396,7 @@
                     bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*7, vy: Math.sin(angle)*7, radius: 25, color: '#00b0ff', damage: 200, isIce: true });
                 }
             }
+            // 🧪 ASİT
             else if (player.elementId === 'asit') {
                 if (key === 'Q') {
                     for (let i = -3; i <= 3; i++) {
@@ -358,11 +416,13 @@
                     });
                 }
             }
+            // 👥 KLON ASKER
             else if (player.elementId === 'klon') {
                 if (key === 'Q') createClone('normal');
                 else if (key === 'E') createClone('archer');
                 else if (key === 'R') createClone('giant');
             }
+            // 🔴 LAZER
             else if (player.elementId === 'lazer') {
                 if (key === 'Q') {
                     let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
@@ -378,6 +438,7 @@
                     }
                 }
             }
+            // 🟣 MOR ŞOK DALGASI
             else if (player.elementId === 'morsok') {
                 if (key === 'Q') {
                     for (let i = 0; i < 20; i++) {
@@ -390,6 +451,7 @@
                     player.speedMultiplier = 3; setTimeout(() => player.speedMultiplier = 1, 5000);
                 }
             }
+            // ⏳ ZAMAN
             else if (player.elementId === 'zaman') {
                 if (key === 'Q') player.timeStoppedUntil = now + 4000;
                 else if (key === 'E') npcs.forEach(npc => npc.weakenedUntil = now + 7000);
@@ -559,13 +621,19 @@
             ctx.save();
             ctx.translate(-camera.x, -camera.y);
 
-            ctx.strokeStyle = "#28283d"; ctx.lineWidth = 2;
+            // 🌱 YEŞİL ÇİMENLİK ZEMİN & DETAYLAR
+            ctx.fillStyle = "#2d5a27";
+            ctx.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+
+            ctx.strokeStyle = "#386b31"; ctx.lineWidth = 2;
             for (let x = 0; x < MAP_SIZE; x += 100) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, MAP_SIZE); ctx.stroke(); }
             for (let y = 0; y < MAP_SIZE; y += 100) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(MAP_SIZE, 0); ctx.stroke(); }
 
-            ctx.fillStyle = "#12121f"; ctx.strokeStyle = "#ff9800"; ctx.lineWidth = 2;
+            // Binalar
+            ctx.fillStyle = "#1e3b1a"; ctx.strokeStyle = "#4caf50"; ctx.lineWidth = 2;
             buildings.forEach(b => { ctx.fillRect(b.x, b.y, b.w, b.h); ctx.strokeRect(b.x, b.y, b.w, b.h); });
 
+            // İz Efekti
             player.trail.forEach((t, i) => {
                 ctx.fillStyle = player.color; ctx.globalAlpha = t.alpha;
                 ctx.beginPath(); ctx.arc(t.x, t.y, player.radius, 0, Math.PI * 2); ctx.fill();
@@ -574,17 +642,20 @@
             });
             ctx.globalAlpha = 1;
 
+            // Klonlar
             playerClones.forEach(clone => {
                 ctx.fillStyle = "#ffab00";
                 ctx.beginPath(); ctx.arc(clone.x, clone.y, clone.radius, 0, Math.PI * 2); ctx.fill();
                 drawHealthBar(clone.x, clone.y, clone.hp, clone.maxHp);
             });
 
+            // Mermiler
             bullets.forEach(b => {
                 ctx.fillStyle = b.color;
                 ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill();
             });
 
+            // Botlar & Bosslar
             npcs.forEach(npc => {
                 ctx.fillStyle = npc.color;
                 ctx.beginPath(); ctx.arc(npc.x, npc.y, npc.radius, 0, Math.PI * 2); ctx.fill();
@@ -601,6 +672,7 @@
                 drawHealthBar(npc.x, npc.y, npc.hp, npc.maxHp, npc.radius * 2.5);
             });
 
+            // Oyuncu
             ctx.fillStyle = player.color;
             ctx.beginPath(); ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2); ctx.fill();
             ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.stroke();
