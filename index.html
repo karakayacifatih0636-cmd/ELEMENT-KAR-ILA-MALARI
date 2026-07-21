@@ -42,8 +42,12 @@
 
         .shop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; max-width: 1000px; }
         .shop-card { background: #161626; border: 1px solid #444; padding: 15px; border-radius: 8px; text-align: center; }
+        
         .buy-btn { background: #4caf50; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; }
-        .buy-btn:disabled { background: #555; cursor: not-allowed; }
+        .select-btn { background: #2196f3; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; }
+        .selected-btn { background: #9c27b0; color: white; border: none; padding: 8px 12px; border-radius: 5px; width: 100%; margin-top: 10px; font-weight: bold; cursor: default; }
+        .buy-btn:disabled, .select-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+
         .close-btn { background: #f44336; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; margin-top: 20px; font-weight: bold; }
 
         .controls-hint {
@@ -89,7 +93,7 @@
 
     <div id="shopModal" class="modal hidden">
         <h1>🛒 ELEMENT MAĞAZASI</h1>
-        <p>Satın aldığın elementler yeni görünümler ve özel Q, E, R yetenekleri verir!</p>
+        <p>Elementleri sırayla satın alabilir, aldıklarını dilediğin zaman seçebilirsin!</p>
         <div class="shop-grid" id="shopGrid"></div>
         <button class="close-btn" onclick="toggleShop()">Kapat ve Oyuna Dön</button>
     </div>
@@ -143,6 +147,7 @@
         const bullets = [];
         const playerClones = [];
 
+        // MAĞAZA LİSTESİ - Ucuzdan Pahalıya Sıralı
         const shopItems = [
             { 
                 id: 'yildirim', name: '⚡ Yıldırım', price: 250, damage: 45, color: '#e040fb', bought: false,
@@ -187,66 +192,26 @@
         }
 
         function createNPC(type, isBoss = false) {
-            let name = "";
-            let color = "#aaa";
-            let weapon = "normal";
-            let hp = 100;
-            let radius = 16;
-            let speed = 2;
+            let name = "", color = "#aaa", weapon = "normal", hp = 100, radius = 16, speed = 2;
 
-            if (type === 'murat') {
-                name = "Murat " + muratCount++;
-                color = "#e53935";
-                weapon = "sword";
-            } else if (type === 'ruzgar') {
-                name = "Rüzgar " + ruzgarCount++;
-                color = "#00bcd4";
-                weapon = "bow";
-            } else if (type === 'hasan') {
-                name = "Hasan " + hasanCount++;
-                color = "#4caf50";
-                weapon = "normal";
-            } else if (type === 'kral_murat') {
-                name = "👑 Kral Murat (BOSS)";
-                color = "#b71c1c";
-                weapon = "sword";
-                hp = 2500;
-                radius = 32;
-                speed = 2.8;
-            } else if (type === 'kral_ruzgar') {
-                name = "👑 Kral Rüzgar (2. BOSS)";
-                color = "#006064";
-                weapon = "bow";
-                hp = 1800;
-                radius = 28;
-                speed = 3.2;
-            }
+            if (type === 'murat') { name = "Murat " + muratCount++; color = "#e53935"; weapon = "sword"; }
+            else if (type === 'ruzgar') { name = "Rüzgar " + ruzgarCount++; color = "#00bcd4"; weapon = "bow"; }
+            else if (type === 'hasan') { name = "Hasan " + hasanCount++; color = "#4caf50"; weapon = "normal"; }
+            else if (type === 'kral_murat') { name = "👑 Kral Murat (BOSS)"; color = "#b71c1c"; weapon = "sword"; hp = 2500; radius = 32; speed = 2.8; }
+            else if (type === 'kral_ruzgar') { name = "👑 Kral Rüzgar (2. BOSS)"; color = "#006064"; weapon = "bow"; hp = 1800; radius = 28; speed = 3.2; }
 
             npcs.push({
-                id: "bot_" + Math.random(),
-                name: name,
-                type: type,
-                weapon: weapon,
-                x: Math.random() * (MAP_SIZE - 300) + 150,
-                y: Math.random() * (MAP_SIZE - 300) + 150,
-                radius: radius,
-                color: color,
-                hp: hp,
-                maxHp: hp,
-                vx: (Math.random() - 0.5) * speed,
-                vy: (Math.random() - 0.5) * speed,
-                lastShoot: Date.now() + Math.random() * 2000,
-                frozenUntil: 0,
-                weakenedUntil: 0
+                id: "bot_" + Math.random(), name: name, type: type, weapon: weapon,
+                x: Math.random() * (MAP_SIZE - 300) + 150, y: Math.random() * (MAP_SIZE - 300) + 150,
+                radius: radius, color: color, hp: hp, maxHp: hp,
+                vx: (Math.random() - 0.5) * speed, vy: (Math.random() - 0.5) * speed,
+                lastShoot: Date.now() + Math.random() * 2000, frozenUntil: 0, weakenedUntil: 0
             });
         }
 
         function spawnInitialNPCs() {
-            // Bosslar
             createNPC('kral_murat', true);
             createNPC('kral_ruzgar', true);
-
-            // Standart botlar
             for (let i = 0; i < 8; i++) createNPC('murat');
             for (let i = 0; i < 8; i++) createNPC('ruzgar');
             for (let i = 0; i < 8; i++) createNPC('hasan');
@@ -281,21 +246,39 @@
             document.getElementById("shopModal").classList.toggle("hidden");
         }
 
+        // MAĞAZA EKRANI VE BUTON DURUMLARI (Seç, Seçildi, Satın Al, Kilitli)
         function renderShop() {
             const shopGrid = document.getElementById("shopGrid");
             shopGrid.innerHTML = "";
-            shopItems.forEach(item => {
+            
+            shopItems.forEach((item, index) => {
                 const card = document.createElement("div");
                 card.className = "shop-card";
+                
+                // Kilit Mantığı: Önceki item satın alınmadıysa kilitli kalır
+                let isUnlocked = (index === 0) || shopItems[index - 1].bought;
+
+                let actionButtonHtml = "";
+
+                if (item.bought) {
+                    if (player.elementId === item.id) {
+                        actionButtonHtml = `<button class="selected-btn">✓ Seçildi</button>`;
+                    } else {
+                        actionButtonHtml = `<button class="select-btn" onclick="equipItem('${item.id}')">Seç</button>`;
+                    }
+                } else {
+                    if (isUnlocked) {
+                        actionButtonHtml = `<button class="buy-btn" onclick="buyItem('${item.id}')">Satın Al</button>`;
+                    } else {
+                        actionButtonHtml = `<button class="buy-btn" disabled>🔒 Öncekini Al</button>`;
+                    }
+                }
+
                 card.innerHTML = `
                     <h4>${item.name}</h4>
                     <p style="color:#aaa; font-size:0.75rem; margin:5px 0;">Q: ${item.skills.Q}<br>E: ${item.skills.E}<br>R: ${item.skills.R}</p>
                     <p style="color:#ffd700; font-weight:bold;">${item.price} Altın</p>
-                    <button class="buy-btn" 
-                        onclick="buyItem('${item.id}')" 
-                        ${item.bought ? 'disabled' : ''}>
-                        ${item.bought ? 'Kuşanıldı' : 'Satın Al'}
-                    </button>
+                    ${actionButtonHtml}
                 `;
                 shopGrid.appendChild(card);
             });
@@ -306,13 +289,20 @@
             if (gold >= item.price && !item.bought) {
                 gold -= item.price;
                 item.bought = true;
+                equipItem(itemId);
+                document.getElementById("goldText").innerText = gold;
+            }
+        }
+
+        function equipItem(itemId) {
+            const item = shopItems.find(i => i.id === itemId);
+            if (item && item.bought) {
                 player.elementId = item.id;
                 player.elementName = item.name;
                 player.bulletDamage = item.damage;
                 player.bulletColor = item.color;
                 player.color = item.color;
                 
-                document.getElementById("goldText").innerText = gold;
                 document.getElementById("elementText").innerText = item.name;
                 renderShop();
             }
@@ -323,114 +313,87 @@
             const worldMouseX = mouse.x + camera.x;
             const worldMouseY = mouse.y + camera.y;
 
-            // ⚡ YILDIRIM
             if (player.elementId === 'yildirim') {
-                if (key === 'Q') { // 1. Yıldırım Çaktır
-                    shootLightningStrike(worldMouseX, worldMouseY, 120);
-                } else if (key === 'E') { // 2. Yıldırım Okları
+                if (key === 'Q') shootLightningStrike(worldMouseX, worldMouseY, 120);
+                else if (key === 'E') {
                     for (let i = -2; i <= 2; i++) {
                         let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x) + (i * 0.15);
                         bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*16, vy: Math.sin(angle)*16, radius: 4, color: '#e040fb', damage: 60 });
                     }
-                } else if (key === 'R') { // 3. Her Yere Yıldırım
-                    npcs.forEach(npc => shootLightningStrike(npc.x, npc.y, 100));
-                }
+                } else if (key === 'R') npcs.forEach(npc => shootLightningStrike(npc.x, npc.y, 100));
             }
-            // 🌩️ ŞİMŞEK
             else if (player.elementId === 'simsek') {
-                if (key === 'Q') { // 1. İzi Bırakan Hızlanma
-                    player.speedMultiplier = 2.5;
-                    setTimeout(() => player.speedMultiplier = 1, 4000);
-                } else if (key === 'E') { // 2. Ağır Sarı Şimşek
-                    shootLightningStrike(worldMouseX, worldMouseY, 250, '#ffeb3b');
-                } else if (key === 'R') { // 3. Şimşek Eller
-                    player.bulletDamage *= 2;
-                    setTimeout(() => player.bulletDamage /= 2, 6000);
-                }
+                if (key === 'Q') { player.speedMultiplier = 2.5; setTimeout(() => player.speedMultiplier = 1, 4000); }
+                else if (key === 'E') shootLightningStrike(worldMouseX, worldMouseY, 250, '#ffeb3b');
+                else if (key === 'R') { player.bulletDamage *= 2; setTimeout(() => player.bulletDamage /= 2, 6000); }
             }
-            // ❄️ BUZ
             else if (player.elementId === 'buz') {
-                if (key === 'Q') { // 1. Dondur
-                    npcs.forEach(npc => {
-                        if (Math.hypot(npc.x - player.x, npc.y - player.y) < 350) npc.frozenUntil = now + 3500;
-                    });
-                } else if (key === 'E') { // 2. Buz Parçaları
+                if (key === 'Q') npcs.forEach(npc => { if (Math.hypot(npc.x - player.x, npc.y - player.y) < 350) npc.frozenUntil = now + 3500; });
+                else if (key === 'E') {
                     for (let i = 0; i < 12; i++) {
                         let angle = (Math.PI / 6) * i;
                         bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*10, vy: Math.sin(angle)*10, radius: 6, color: '#80d8ff', damage: 50, isIce: true });
                     }
-                } else if (key === 'R') { // 3. Dev Buz Topu
+                } else if (key === 'R') {
                     let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
                     bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*7, vy: Math.sin(angle)*7, radius: 25, color: '#00b0ff', damage: 200, isIce: true });
                 }
             }
-            // 🧪 ASİT
             else if (player.elementId === 'asit') {
-                if (key === 'Q') { // 1. Asit Fışkırt
+                if (key === 'Q') {
                     for (let i = -3; i <= 3; i++) {
                         let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x) + (i * 0.1);
                         bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*12, vy: Math.sin(angle)*12, radius: 7, color: '#76ff03', damage: 55 });
                     }
-                } else if (key === 'E') { // 2. 3 Asit Topu
+                } else if (key === 'E') {
                     for (let i = -1; i <= 1; i++) {
                         let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x) + (i * 0.3);
                         bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*9, vy: Math.sin(angle)*9, radius: 14, color: '#64dd17', damage: 110 });
                     }
-                } else if (key === 'R') { // 3. Asit İpi Çekimi
+                } else if (key === 'R') {
                     npcs.forEach(npc => {
                         if (Math.hypot(npc.x - player.x, npc.y - player.y) < 400) {
-                            npc.x = player.x + 30;
-                            npc.y = player.y + 30;
-                            npc.hp -= 100;
+                            npc.x = player.x + 30; npc.y = player.y + 30; npc.hp -= 100;
                         }
                     });
                 }
             }
-            // 👥 KLON ASKER
             else if (player.elementId === 'klon') {
-                if (key === 'Q') createClone('normal'); // 1. Normal Klon
-                else if (key === 'E') createClone('archer'); // 2. Okçu Klon
-                else if (key === 'R') createClone('giant'); // 3. Dev Klon
+                if (key === 'Q') createClone('normal');
+                else if (key === 'E') createClone('archer');
+                else if (key === 'R') createClone('giant');
             }
-            // 🔴 LAZER
             else if (player.elementId === 'lazer') {
-                if (key === 'Q') { // 1. Çift Göz Lazeri
+                if (key === 'Q') {
                     let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
                     bullets.push({ shooterId: 'player', x: player.x - 5, y: player.y - 5, vx: Math.cos(angle)*20, vy: Math.sin(angle)*20, radius: 5, color: '#ff1744', damage: 80 });
                     bullets.push({ shooterId: 'player', x: player.x + 5, y: player.y + 5, vx: Math.cos(angle)*20, vy: Math.sin(angle)*20, radius: 5, color: '#ff1744', damage: 80 });
-                } else if (key === 'E') { // 2. Dev Lazer
+                } else if (key === 'E') {
                     let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
                     bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*22, vy: Math.sin(angle)*22, radius: 30, color: '#d50000', damage: 250 });
-                } else if (key === 'R') { // 3. Her Yere Lazer
+                } else if (key === 'R') {
                     for (let i = 0; i < 16; i++) {
                         let angle = (Math.PI / 8) * i;
                         bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*18, vy: Math.sin(angle)*18, radius: 6, color: '#ff1744', damage: 100 });
                     }
                 }
             }
-            // 🟣 MOR ŞOK DALGASI
             else if (player.elementId === 'morsok') {
-                if (key === 'Q') { // 1. Mor Şok Dalgası
+                if (key === 'Q') {
                     for (let i = 0; i < 20; i++) {
                         let angle = (Math.PI / 10) * i;
                         bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*10, vy: Math.sin(angle)*10, radius: 10, color: '#ea80fc', damage: 90 });
                     }
-                } else if (key === 'E') { // 2. Mor Kılıç Saldırısı
-                    npcs.forEach(npc => {
-                        if (Math.hypot(npc.x - player.x, npc.y - player.y) < 180) npc.hp -= 200;
-                    });
-                } else if (key === 'R') { // 3. 3 Kat Hızlanma
-                    player.speedMultiplier = 3;
-                    setTimeout(() => player.speedMultiplier = 1, 5000);
+                } else if (key === 'E') {
+                    npcs.forEach(npc => { if (Math.hypot(npc.x - player.x, npc.y - player.y) < 180) npc.hp -= 200; });
+                } else if (key === 'R') {
+                    player.speedMultiplier = 3; setTimeout(() => player.speedMultiplier = 1, 5000);
                 }
             }
-            // ⏳ ZAMAN
             else if (player.elementId === 'zaman') {
-                if (key === 'Q') { // 1. Zamanı Durdur
-                    player.timeStoppedUntil = now + 4000;
-                } else if (key === 'E') { // 2. Herkesi Zayıflat
-                    npcs.forEach(npc => npc.weakenedUntil = now + 7000);
-                } else if (key === 'R') { // 3. Her Yere Saat At
+                if (key === 'Q') player.timeStoppedUntil = now + 4000;
+                else if (key === 'E') npcs.forEach(npc => npc.weakenedUntil = now + 7000);
+                else if (key === 'R') {
                     for (let i = 0; i < 14; i++) {
                         let angle = (Math.PI / 7) * i;
                         bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*11, vy: Math.sin(angle)*11, radius: 12, color: '#ffffff', damage: 180 });
@@ -441,22 +404,15 @@
 
         function shootLightningStrike(x, y, damage, color = '#e040fb') {
             bullets.push({ shooterId: 'player', x: x, y: y, vx: 0, vy: 0, radius: 35, color: color, damage: damage, isLightning: true });
-            npcs.forEach(npc => {
-                if (Math.hypot(npc.x - x, npc.y - y) < 50) npc.hp -= damage;
-            });
+            npcs.forEach(npc => { if (Math.hypot(npc.x - x, npc.y - y) < 50) npc.hp -= damage; });
         }
 
         function createClone(type) {
             let radius = type === 'giant' ? 30 : 16;
             let hp = type === 'giant' ? 400 : 120;
             playerClones.push({
-                x: player.x + (Math.random() * 40 - 20),
-                y: player.y + (Math.random() * 40 - 20),
-                radius: radius,
-                type: type,
-                hp: hp,
-                maxHp: hp,
-                lastShoot: 0
+                x: player.x + (Math.random() * 40 - 20), y: player.y + (Math.random() * 40 - 20),
+                radius: radius, type: type, hp: hp, maxHp: hp, lastShoot: 0
             });
         }
 
@@ -464,14 +420,9 @@
             if (!gameRunning) return;
             const angle = Math.atan2(targetY - shooter.y, targetX - shooter.x);
             bullets.push({
-                shooterId: shooter.id,
-                x: shooter.x,
-                y: shooter.y,
-                vx: Math.cos(angle) * 11,
-                vy: Math.sin(angle) * 11,
-                radius: 5,
-                color: shooter.bulletColor || "#ff9800",
-                damage: shooter.bulletDamage || 15
+                shooterId: shooter.id, x: shooter.x, y: shooter.y,
+                vx: Math.cos(angle) * 11, vy: Math.sin(angle) * 11,
+                radius: 5, color: shooter.bulletColor || "#ff9800", damage: shooter.bulletDamage || 15
             });
         }
 
@@ -482,10 +433,8 @@
 
             ctx.fillStyle = "#ff3333";
             ctx.fillRect(barX, barY, width, barHeight);
-
             ctx.fillStyle = "#00ff66";
             ctx.fillRect(barX, barY, Math.max(0, (hp / maxHp) * width), barHeight);
-
             ctx.strokeStyle = "#000";
             ctx.lineWidth = 1;
             ctx.strokeRect(barX, barY, width, barHeight);
@@ -497,7 +446,6 @@
             const now = Date.now();
             const isTimeStopped = now < player.timeStoppedUntil;
 
-            // Oyuncu Hareketi ve İz Bırakma
             player.speed = (keys['shift'] ? player.baseSpeed * 1.8 : player.baseSpeed) * player.speedMultiplier;
 
             if (keys['w']) player.y -= player.speed;
@@ -515,8 +463,7 @@
             camera.x = player.x - canvas.width / 2;
             camera.y = player.y - canvas.height / 2;
 
-            // Klonların Mantığı
-            playerClones.forEach((clone, index) => {
+            playerClones.forEach((clone) => {
                 let closestNpc = null, minDist = 400;
                 npcs.forEach(npc => {
                     let d = Math.hypot(npc.x - clone.x, npc.y - clone.y);
@@ -530,13 +477,9 @@
                 }
             });
 
-            // Mermiler
             for (let i = bullets.length - 1; i >= 0; i--) {
                 let b = bullets[i];
-                if (!b.isLightning) {
-                    b.x += b.vx;
-                    b.y += b.vy;
-                }
+                if (!b.isLightning) { b.x += b.vx; b.y += b.vy; }
 
                 if (b.shooterId !== 'player') {
                     let distToPlayer = Math.hypot(b.x - player.x, b.y - player.y);
@@ -545,8 +488,7 @@
                         bullets.splice(i, 1);
                         if (player.hp <= 0) {
                             player.hp = player.maxHp;
-                            player.x = MAP_SIZE / 2;
-                            player.y = MAP_SIZE / 2;
+                            player.x = MAP_SIZE / 2; player.y = MAP_SIZE / 2;
                         }
                         continue;
                     }
@@ -565,8 +507,7 @@
                             if (npc.hp <= 0) {
                                 let reward = npc.type.includes('kral') ? 500 : 60;
                                 if (b.shooterId === 'player') {
-                                    gold += reward;
-                                    score += reward * 3;
+                                    gold += reward; score += reward * 3;
                                     document.getElementById("goldText").innerText = gold;
                                     document.getElementById("scoreText").innerText = score;
                                 }
@@ -580,19 +521,16 @@
                 }
             }
 
-            // Bot Yapay Zekası
             if (!isTimeStopped) {
                 npcs.forEach(npc => {
-                    if (now < npc.frozenUntil) return; // Donmuşsa hareket edemez
+                    if (now < npc.frozenUntil) return;
 
                     let speedMult = now < npc.weakenedUntil ? 0.5 : 1;
-                    npc.x += npc.vx * speedMult;
-                    npc.y += npc.vy * speedMult;
+                    npc.x += npc.vx * speedMult; npc.y += npc.vy * speedMult;
 
                     if (npc.x < 50 || npc.x > MAP_SIZE - 50) npc.vx *= -1;
                     if (npc.y < 50 || npc.y > MAP_SIZE - 50) npc.vy *= -1;
 
-                    // Murat Botları (Kılıçlı - Yakın Dövüş)
                     if (npc.weapon === 'sword') {
                         let distToPlayer = Math.hypot(player.x - npc.x, player.y - npc.y);
                         if (distToPlayer < 250) {
@@ -603,9 +541,7 @@
                                 npc.lastShoot = now;
                             }
                         }
-                    }
-                    // Rüzgar Botları (Okçu - Uzaktan Ateş)
-                    else {
+                    } else {
                         if (now - npc.lastShoot > 2000) {
                             let distToPlayer = Math.hypot(player.x - npc.x, player.y - npc.y);
                             if (distToPlayer < 450) {
@@ -623,65 +559,39 @@
             ctx.save();
             ctx.translate(-camera.x, -camera.y);
 
-            // Izgara Yollar
-            ctx.strokeStyle = "#28283d";
-            ctx.lineWidth = 2;
-            for (let x = 0; x < MAP_SIZE; x += 100) {
-                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, MAP_SIZE); ctx.stroke();
-            }
-            for (let y = 0; y < MAP_SIZE; y += 100) {
-                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(MAP_SIZE, 0); ctx.stroke();
-            }
+            ctx.strokeStyle = "#28283d"; ctx.lineWidth = 2;
+            for (let x = 0; x < MAP_SIZE; x += 100) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, MAP_SIZE); ctx.stroke(); }
+            for (let y = 0; y < MAP_SIZE; y += 100) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(MAP_SIZE, 0); ctx.stroke(); }
 
-            // Binalar
-            ctx.fillStyle = "#12121f";
-            ctx.strokeStyle = "#ff9800";
-            ctx.lineWidth = 2;
-            buildings.forEach(b => {
-                ctx.fillRect(b.x, b.y, b.w, b.h);
-                ctx.strokeRect(b.x, b.y, b.w, b.h);
-            });
+            ctx.fillStyle = "#12121f"; ctx.strokeStyle = "#ff9800"; ctx.lineWidth = 2;
+            buildings.forEach(b => { ctx.fillRect(b.x, b.y, b.w, b.h); ctx.strokeRect(b.x, b.y, b.w, b.h); });
 
-            // İz Efekti
             player.trail.forEach((t, i) => {
-                ctx.fillStyle = player.color;
-                ctx.globalAlpha = t.alpha;
+                ctx.fillStyle = player.color; ctx.globalAlpha = t.alpha;
                 ctx.beginPath(); ctx.arc(t.x, t.y, player.radius, 0, Math.PI * 2); ctx.fill();
                 t.alpha -= 0.05;
                 if (t.alpha <= 0) player.trail.splice(i, 1);
             });
             ctx.globalAlpha = 1;
 
-            // Klonlar
             playerClones.forEach(clone => {
                 ctx.fillStyle = "#ffab00";
                 ctx.beginPath(); ctx.arc(clone.x, clone.y, clone.radius, 0, Math.PI * 2); ctx.fill();
                 drawHealthBar(clone.x, clone.y, clone.hp, clone.maxHp);
             });
 
-            // Mermiler
             bullets.forEach(b => {
                 ctx.fillStyle = b.color;
-                ctx.beginPath();
-                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill();
             });
 
-            // Botlar
             npcs.forEach(npc => {
                 ctx.fillStyle = npc.color;
-                ctx.beginPath();
-                ctx.arc(npc.x, npc.y, npc.radius, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(npc.x, npc.y, npc.radius, 0, Math.PI * 2); ctx.fill();
 
-                // Silah Görselleri
                 if (npc.weapon === 'sword') {
-                    ctx.strokeStyle = "#ffffff";
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    ctx.moveTo(npc.x, npc.y);
-                    ctx.lineTo(npc.x + 20, npc.y - 20);
-                    ctx.stroke();
+                    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(npc.x, npc.y); ctx.lineTo(npc.x + 20, npc.y - 20); ctx.stroke();
                 }
 
                 ctx.fillStyle = "#fff";
@@ -691,14 +601,9 @@
                 drawHealthBar(npc.x, npc.y, npc.hp, npc.maxHp, npc.radius * 2.5);
             });
 
-            // Oyuncu (Sen)
             ctx.fillStyle = player.color;
-            ctx.beginPath();
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            ctx.beginPath(); ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.stroke();
             drawHealthBar(player.x, player.y, player.hp, player.maxHp, 55);
 
             ctx.restore();
