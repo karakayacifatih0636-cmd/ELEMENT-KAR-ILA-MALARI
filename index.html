@@ -10,35 +10,49 @@
         
         #ui-bar {
             position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-            background: rgba(20, 20, 35, 0.9); padding: 12px 25px; border-radius: 10px;
-            display: flex; gap: 25px; z-index: 10; font-weight: bold; border: 1px solid #333;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            background: rgba(20, 20, 35, 0.95); padding: 12px 25px; border-radius: 10px;
+            display: flex; gap: 20px; z-index: 10; font-weight: bold; border: 1px solid #333;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); align-items: center;
         }
+
+        .shop-btn {
+            background: #ff9800; color: #000; border: none; padding: 6px 15px;
+            border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;
+        }
+        .shop-btn:hover { background: #e68a00; }
 
         #gameCanvas { background: #181824; display: block; cursor: crosshair; }
 
-        .starter-modal {
+        .modal {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(10, 10, 20, 0.95); display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 20;
         }
 
-        .starter-modal h1 { font-size: 2.5rem; margin-bottom: 10px; color: #ff9800; }
-        .starter-modal p { color: #aaa; margin-bottom: 25px; }
+        .modal h1 { font-size: 2.5rem; margin-bottom: 10px; color: #ff9800; }
+        .modal p { color: #aaa; margin-bottom: 20px; }
 
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         .card { 
-            background: #1f1f33; border: 2px solid #3d3d66; padding: 25px; border-radius: 12px; 
-            cursor: pointer; width: 200px; transition: transform 0.2s, border-color 0.2s;
+            background: #1f1f33; border: 2px solid #3d3d66; padding: 20px; border-radius: 12px; 
+            cursor: pointer; width: 220px; transition: transform 0.2s, border-color 0.2s;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
         }
-        .card:hover { border-color: #ff9800; transform: translateY(-5px); background: #2a2a45; }
-        .card h3 { margin-bottom: 8px; }
+        .card:hover { border-color: #ff9800; transform: translateY(-3px); background: #2a2a45; }
+
+        .shop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; max-width: 1000px; }
+        .shop-card { background: #161626; border: 1px solid #444; padding: 15px; border-radius: 8px; text-align: center; }
+        .buy-btn { background: #4caf50; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; }
+        .buy-btn:disabled { background: #555; cursor: not-allowed; }
+        .close-btn { background: #f44336; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; margin-top: 20px; font-weight: bold; }
 
         .controls-hint {
             position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 20px; font-size: 0.85rem; color: #ccc;
             border: 1px solid #333;
         }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -47,35 +61,43 @@
         <div>💰 Altın: <span id="goldText" style="color:#ffd700">100</span></div>
         <div>🏆 Skor: <span id="scoreText" style="color:#00ffcc">0</span></div>
         <div>⚡ Element: <span id="elementText" style="color:#ff9800">-</span></div>
+        <button class="shop-btn" onclick="toggleShop()">🛒 MAĞAZA (M)</button>
     </div>
 
-    <div id="starterModal" class="starter-modal">
+    <div id="starterModal" class="modal">
         <h1>🌐 ELEMENT ARENASI</h1>
-        <p>Başlangıç elementini seç ve online botlarla dolu şehre gir!</p>
+        <p>Başlangıç elementini seç ve savaşa katıl!</p>
         <div class="grid">
-            <div class="card" onclick="selectElement('Ateş')">
+            <div class="card" onclick="selectStarter('Ateş')">
                 <h3>🔥 Ateş</h3>
                 <span style="font-size:0.8rem; color:#aaa;">Yüksek Hasar</span>
             </div>
-            <div class="card" onclick="selectElement('Su')">
+            <div class="card" onclick="selectStarter('Su')">
                 <h3>💧 Su</h3>
                 <span style="font-size:0.8rem; color:#aaa;">Can Yenileme</span>
             </div>
-            <div class="card" onclick="selectElement('Hava')">
+            <div class="card" onclick="selectStarter('Hava')">
                 <h3>🌪️ Hava</h3>
                 <span style="font-size:0.8rem; color:#aaa;">Hızlı Saldırı</span>
             </div>
-            <div class="card" onclick="selectElement('Toprak')">
+            <div class="card" onclick="selectStarter('Toprak')">
                 <h3>🪨 Toprak</h3>
                 <span style="font-size:0.8rem; color:#aaa;">Yüksek Savunma</span>
             </div>
         </div>
     </div>
 
+    <div id="shopModal" class="modal hidden">
+        <h1>🛒 ELEMENT MAĞAZASI</h1>
+        <p>Satın aldığın element yeni görünümler ve Q, E, R yetenekleri kazandırır!</p>
+        <div class="shop-grid" id="shopGrid"></div>
+        <button class="close-btn" onclick="toggleShop()">Kapat ve Oyuna Dön</button>
+    </div>
+
     <canvas id="gameCanvas"></canvas>
 
     <div class="controls-hint">
-        <b>Hareket:</b> WASD / Yön Tuşları | <b>Ateş Et:</b> Sol Tık
+        <b>Hareket:</b> WASD | <b>Koşma:</b> Shift | <b>Ateş:</b> Sol Tık | <b>Yetenekler:</b> Q, E, R | <b>Mağaza:</b> M
     </div>
 
     <script>
@@ -87,20 +109,30 @@
 
         let gold = 100;
         let score = 0;
-        let selectedElement = "";
         let gameRunning = false;
+        let botCounter = 1;
 
         const MAP_SIZE = 2400;
         const camera = { x: 0, y: 0 };
 
         const player = {
+            id: 'player',
             x: MAP_SIZE / 2,
             y: MAP_SIZE / 2,
             radius: 16,
             color: "#00ffcc",
+            baseSpeed: 4.5,
             speed: 4.5,
             hp: 100,
-            maxHp: 100
+            maxHp: 100,
+            elementName: 'Ateş',
+            bulletDamage: 30,
+            bulletColor: "#ff9800",
+            skills: {
+                Q: { name: "🔥 Alev Dalgası", cooldown: 3000, lastUse: 0 },
+                E: { name: "🛡️ Ateş Kalkanı", cooldown: 6000, lastUse: 0 },
+                R: { name: "💥 Kıyamet Patlaması", cooldown: 12000, lastUse: 0 }
+            }
         };
 
         const keys = {};
@@ -109,7 +141,41 @@
         const npcs = [];
         const bullets = [];
 
-        const botNames = ["Alpha_Bot", "Vortex", "Shadow", "Elementor", "Cyber_Kral", "X_Player", "Nova"];
+        // MAĞAZADAKİ ELEMENTLER VE 3 ADET ÖZEL YETENEKLERİ (Q, E, R)
+        const shopItems = [
+            { 
+                id: 'yildirim', name: '⚡ Yıldırım', price: 250, damage: 45, color: '#e040fb', bought: false,
+                skills: { Q: { name: "Şok Dalgası", cd: 3000 }, E: { name: "Şimşek Adımı", cd: 5000 }, R: { name: "Aşırı Yükleme", cd: 10000 } }
+            },
+            { 
+                id: 'simsek', name: '🌩️ Şimşek', price: 1000, damage: 60, color: '#00e5ff', bought: false,
+                skills: { Q: { name: "Gökyüzü Darbesi", cd: 3000 }, E: { name: "İyon Kalkanı", cd: 6000 }, R: { name: "Fırtına Patlaması", cd: 10000 } }
+            },
+            { 
+                id: 'buz', name: '❄️ Buz', price: 1250, damage: 75, color: '#80d8ff', bought: false,
+                skills: { Q: { name: "Dondurucu Ok", cd: 3000 }, E: { name: "Buz Duvarı", cd: 7000 }, R: { name: "Tipi Fırtınası", cd: 11000 } }
+            },
+            { 
+                id: 'asit', name: '🧪 Asit', price: 1950, damage: 95, color: '#76ff03', bought: false,
+                skills: { Q: { name: "Asit Püskürtme", cd: 2500 }, E: { name: "Zehirli Havuz", cd: 6000 }, R: { name: "Eriyen Patlama", cd: 10000 } }
+            },
+            { 
+                id: 'klon', name: '👥 Klon Asker', price: 2800, damage: 120, color: '#ffab00', bought: false,
+                skills: { Q: { name: "Depar", cd: 3000 }, E: { name: "Sahte Klon", cd: 8000 }, R: { name: "Klon Ordusu", cd: 15000 } }
+            },
+            { 
+                id: 'lazer', name: '🔴 Lazer', price: 4450, damage: 160, color: '#ff1744', bought: false,
+                skills: { Q: { name: "Lazer Işını", cd: 2000 }, E: { name: "Yansıtıcı Zırh", cd: 6000 }, R: { name: "Lazer Yağmuru", cd: 12000 } }
+            },
+            { 
+                id: 'morsok', name: '🟣 Mor Şok Dalgası', price: 7500, damage: 220, color: '#d500f9', bought: false,
+                skills: { Q: { name: "Şok Dalgası", cd: 3000 }, E: { name: "Çekim Alanı", cd: 7000 }, R: { name: "Mor Süpernova", cd: 14000 } }
+            },
+            { 
+                id: 'zaman', name: '⏳ Zaman', price: 20000, damage: 350, color: '#ffffff', bought: false,
+                skills: { Q: { name: "Zamanı Yavaşlat", cd: 5000 }, E: { name: "Zamanı Durdur", cd: 10000 }, R: { name: "Zamanı Geri Al", cd: 20000 } }
+            }
+        ];
 
         function generateCity() {
             for (let x = 150; x < MAP_SIZE - 250; x += 350) {
@@ -121,49 +187,124 @@
 
         function spawnNPCs(count) {
             for (let i = 0; i < count; i++) {
+                let botId = "bot_" + botCounter;
                 npcs.push({
-                    name: botNames[Math.floor(Math.random() * botNames.length)] + "_" + Math.floor(Math.random()*89 + 10),
+                    id: botId,
+                    name: "Murat " + botCounter++,
                     x: Math.random() * (MAP_SIZE - 300) + 150,
                     y: Math.random() * (MAP_SIZE - 300) + 150,
                     radius: 16,
                     color: `hsl(${Math.random() * 360}, 75%, 55%)`,
                     hp: 100,
                     maxHp: 100,
-                    vx: (Math.random() - 0.5) * 2.5,
-                    vy: (Math.random() - 0.5) * 2.5
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    lastShoot: Date.now() + Math.random() * 2000
                 });
             }
         }
 
-        window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+        window.addEventListener("keydown", e => {
+            let key = e.key.toLowerCase();
+            keys[key] = true;
+            if (key === 'm' && gameRunning) toggleShop();
+            if (['q', 'e', 'r'].includes(key) && gameRunning) triggerSkill(key.toUpperCase());
+        });
+
         window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
         window.addEventListener("mousemove", e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-        window.addEventListener("click", shootBullet);
+        window.addEventListener("click", e => {
+            if (e.target.tagName === 'CANVAS') shootBullet(player, mouse.x + camera.x, mouse.y + camera.y);
+        });
 
-        function selectElement(elem) {
-            selectedElement = elem;
+        function selectStarter(elem) {
+            player.elementName = elem;
             document.getElementById("elementText").innerText = elem;
-            document.getElementById("starterModal").style.display = "none";
+            document.getElementById("starterModal").classList.add("hidden");
             
             generateCity();
-            spawnNPCs(25);
+            spawnNPCs(20);
+            renderShop();
             gameRunning = true;
             requestAnimationFrame(gameLoop);
         }
 
-        function shootBullet() {
-            if (!gameRunning) return;
-            const worldMouseX = mouse.x + camera.x;
-            const worldMouseY = mouse.y + camera.y;
+        function toggleShop() {
+            document.getElementById("shopModal").classList.toggle("hidden");
+        }
 
-            const angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
+        function renderShop() {
+            const shopGrid = document.getElementById("shopGrid");
+            shopGrid.innerHTML = "";
+            shopItems.forEach(item => {
+                const card = document.createElement("div");
+                card.className = "shop-card";
+                card.innerHTML = `
+                    <h4>${item.name}</h4>
+                    <p style="color:#aaa; font-size:0.75rem; margin:5px 0;">Q: ${item.skills.Q.name}<br>E: ${item.skills.E.name}<br>R: ${item.skills.R.name}</p>
+                    <p style="color:#ffd700; font-weight:bold;">${item.price} Altın</p>
+                    <button class="buy-btn" 
+                        onclick="buyItem('${item.id}')" 
+                        ${item.bought ? 'disabled' : ''}>
+                        ${item.bought ? 'Kuşanıldı' : 'Satın Al'}
+                    </button>
+                `;
+                shopGrid.appendChild(card);
+            });
+        }
+
+        function buyItem(itemId) {
+            const item = shopItems.find(i => i.id === itemId);
+            if (gold >= item.price && !item.bought) {
+                gold -= item.price;
+                item.bought = true;
+                player.elementName = item.name;
+                player.bulletDamage = item.damage;
+                player.bulletColor = item.color;
+                player.color = item.color; // Karakter rengini değiştirir
+                
+                document.getElementById("goldText").innerText = gold;
+                document.getElementById("elementText").innerText = item.name;
+                renderShop();
+            }
+        }
+
+        function triggerSkill(key) {
+            if (!player.skills[key]) return;
+            const now = Date.now();
+            const skill = player.skills[key];
+            
+            if (now - skill.lastUse >= skill.cooldown) {
+                skill.lastUse = now;
+                // Yetenek Alan Saldırısı Yapar
+                for (let i = 0; i < 8; i++) {
+                    let angle = (Math.PI / 4) * i;
+                    bullets.push({
+                        shooterId: player.id,
+                        x: player.x,
+                        y: player.y,
+                        vx: Math.cos(angle) * 12,
+                        vy: Math.sin(angle) * 12,
+                        radius: 8,
+                        color: player.color,
+                        damage: player.bulletDamage * 1.5
+                    });
+                }
+            }
+        }
+
+        function shootBullet(shooter, targetX, targetY) {
+            if (!gameRunning) return;
+            const angle = Math.atan2(targetY - shooter.y, targetX - shooter.x);
             bullets.push({
-                x: player.x,
-                y: player.y,
-                vx: Math.cos(angle) * 12,
-                vy: Math.sin(angle) * 12,
+                shooterId: shooter.id,
+                x: shooter.x,
+                y: shooter.y,
+                vx: Math.cos(angle) * 11,
+                vy: Math.sin(angle) * 11,
                 radius: 5,
-                color: "#ffeb3b"
+                color: shooter.bulletColor || "#ff9800",
+                damage: shooter.bulletDamage || 15
             });
         }
 
@@ -176,7 +317,7 @@
             ctx.fillRect(barX, barY, width, barHeight);
 
             ctx.fillStyle = "#00ff66";
-            ctx.fillRect(barX, barY, (hp / maxHp) * width, barHeight);
+            ctx.fillRect(barX, barY, Math.max(0, (hp / maxHp) * width), barHeight);
 
             ctx.strokeStyle = "#000";
             ctx.lineWidth = 1;
@@ -184,10 +325,15 @@
         }
 
         function update() {
-            if (keys['w'] || keys['arrowup']) player.y -= player.speed;
-            if (keys['s'] || keys['arrowdown']) player.y += player.speed;
-            if (keys['a'] || keys['arrowleft']) player.x -= player.speed;
-            if (keys['d'] || keys['arrowright']) player.x += player.speed;
+            if (!document.getElementById("shopModal").classList.contains("hidden")) return;
+
+            // Shift İle Hızlı Koşma
+            player.speed = keys['shift'] ? player.baseSpeed * 1.8 : player.baseSpeed;
+
+            if (keys['w']) player.y -= player.speed;
+            if (keys['s']) player.y += player.speed;
+            if (keys['a']) player.x -= player.speed;
+            if (keys['d']) player.x += player.speed;
 
             player.x = Math.max(player.radius, Math.min(MAP_SIZE - player.radius, player.x));
             player.y = Math.max(player.radius, Math.min(MAP_SIZE - player.radius, player.y));
@@ -195,38 +341,77 @@
             camera.x = player.x - canvas.width / 2;
             camera.y = player.y - canvas.height / 2;
 
+            // Mermiler
             for (let i = bullets.length - 1; i >= 0; i--) {
                 let b = bullets[i];
                 b.x += b.vx;
                 b.y += b.vy;
 
+                if (b.shooterId !== 'player') {
+                    let distToPlayer = Math.hypot(b.x - player.x, b.y - player.y);
+                    if (distToPlayer < b.radius + player.radius) {
+                        player.hp -= b.damage;
+                        bullets.splice(i, 1);
+                        if (player.hp <= 0) {
+                            player.hp = player.maxHp;
+                            player.x = MAP_SIZE / 2;
+                            player.y = MAP_SIZE / 2;
+                        }
+                        continue;
+                    }
+                }
+
                 for (let j = npcs.length - 1; j >= 0; j--) {
                     let npc = npcs[j];
-                    let dist = Math.hypot(b.x - npc.x, b.y - npc.y);
+                    if (b.shooterId !== npc.id) {
+                        let dist = Math.hypot(b.x - npc.x, b.y - npc.y);
+                        if (dist < b.radius + npc.radius) {
+                            npc.hp -= b.damage;
+                            bullets.splice(i, 1);
 
-                    if (dist < b.radius + npc.radius) {
-                        npc.hp -= 35;
-                        bullets.splice(i, 1);
-
-                        if (npc.hp <= 0) {
-                            npcs.splice(j, 1);
-                            gold += 40;
-                            score += 150;
-                            document.getElementById("goldText").innerText = gold;
-                            document.getElementById("scoreText").innerText = score;
-                            spawnNPCs(1);
+                            if (npc.hp <= 0) {
+                                npcs.splice(j, 1);
+                                if (b.shooterId === 'player') {
+                                    gold += 60;
+                                    score += 200;
+                                    document.getElementById("goldText").innerText = gold;
+                                    document.getElementById("scoreText").innerText = score;
+                                }
+                                spawnNPCs(1);
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
             }
 
+            // Murat Botları Zekası
+            const now = Date.now();
             npcs.forEach(npc => {
                 npc.x += npc.vx;
                 npc.y += npc.vy;
 
                 if (npc.x < 50 || npc.x > MAP_SIZE - 50) npc.vx *= -1;
                 if (npc.y < 50 || npc.y > MAP_SIZE - 50) npc.vy *= -1;
+
+                if (now - npc.lastShoot > 2200) {
+                    let targets = [player, ...npcs.filter(other => other.id !== npc.id)];
+                    let closest = null;
+                    let minDist = 380;
+
+                    targets.forEach(t => {
+                        let d = Math.hypot(t.x - npc.x, t.y - npc.y);
+                        if (d < minDist) {
+                            minDist = d;
+                            closest = t;
+                        }
+                    });
+
+                    if (closest) {
+                        shootBullet(npc, closest.x, closest.y);
+                        npc.lastShoot = now;
+                    }
+                }
             });
         }
 
@@ -262,7 +447,7 @@
                 ctx.fill();
             });
 
-            // Botlar
+            // Murat Botları
             npcs.forEach(npc => {
                 ctx.fillStyle = npc.color;
                 ctx.beginPath();
@@ -276,11 +461,14 @@
                 drawHealthBar(npc.x, npc.y, npc.hp, npc.maxHp);
             });
 
-            // Oyuncu
+            // Oyuncu (Sen)
             ctx.fillStyle = player.color;
             ctx.beginPath();
             ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
             ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
             drawHealthBar(player.x, player.y, player.hp, player.maxHp, 55);
 
             ctx.restore();
