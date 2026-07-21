@@ -89,7 +89,7 @@
 
     <div id="shopModal" class="modal hidden">
         <h1>🛒 ELEMENT MAĞAZASI</h1>
-        <p>Satın aldığın element yeni görünümler ve Q, E, R yetenekleri kazandırır!</p>
+        <p>Satın aldığın elementler yeni görünümler ve özel Q, E, R yetenekleri verir!</p>
         <div class="shop-grid" id="shopGrid"></div>
         <button class="close-btn" onclick="toggleShop()">Kapat ve Oyuna Dön</button>
     </div>
@@ -110,9 +110,9 @@
         let gold = 100;
         let score = 0;
         let gameRunning = false;
-        let botCounter = 1;
+        let muratCount = 1, ruzgarCount = 1, hasanCount = 1;
 
-        const MAP_SIZE = 2400;
+        const MAP_SIZE = 2600;
         const camera = { x: 0, y: 0 };
 
         const player = {
@@ -125,14 +125,15 @@
             speed: 4.5,
             hp: 100,
             maxHp: 100,
+            elementId: 'starter',
             elementName: 'Ateş',
             bulletDamage: 30,
             bulletColor: "#ff9800",
-            skills: {
-                Q: { name: "🔥 Alev Dalgası", cooldown: 3000, lastUse: 0 },
-                E: { name: "🛡️ Ateş Kalkanı", cooldown: 6000, lastUse: 0 },
-                R: { name: "💥 Kıyamet Patlaması", cooldown: 12000, lastUse: 0 }
-            }
+            trail: [],
+            frozenUntil: 0,
+            weakenedUntil: 0,
+            timeStoppedUntil: 0,
+            speedMultiplier: 1
         };
 
         const keys = {};
@@ -140,40 +141,40 @@
         const buildings = [];
         const npcs = [];
         const bullets = [];
+        const playerClones = [];
 
-        // MAĞAZADAKİ ELEMENTLER VE 3 ADET ÖZEL YETENEKLERİ (Q, E, R)
         const shopItems = [
             { 
                 id: 'yildirim', name: '⚡ Yıldırım', price: 250, damage: 45, color: '#e040fb', bought: false,
-                skills: { Q: { name: "Şok Dalgası", cd: 3000 }, E: { name: "Şimşek Adımı", cd: 5000 }, R: { name: "Aşırı Yükleme", cd: 10000 } }
+                skills: { Q: "1. Yıldırım Çaktır", E: "2. Yıldırım Okları", R: "3. Her Yere Yıldırım" }
             },
             { 
-                id: 'simsek', name: '🌩️ Şimşek', price: 1000, damage: 60, color: '#00e5ff', bought: false,
-                skills: { Q: { name: "Gökyüzü Darbesi", cd: 3000 }, E: { name: "İyon Kalkanı", cd: 6000 }, R: { name: "Fırtına Patlaması", cd: 10000 } }
+                id: 'simsek', name: '🌩️ Şimşek', price: 1000, damage: 65, color: '#00e5ff', bought: false,
+                skills: { Q: "1. İzi Bırakan Hızlanma", E: "2. Sarı Şimşek Çaktır", R: "3. Şimşek Eller" }
             },
             { 
                 id: 'buz', name: '❄️ Buz', price: 1250, damage: 75, color: '#80d8ff', bought: false,
-                skills: { Q: { name: "Dondurucu Ok", cd: 3000 }, E: { name: "Buz Duvarı", cd: 7000 }, R: { name: "Tipi Fırtınası", cd: 11000 } }
+                skills: { Q: "1. Dondur", E: "2. Buz Parçaları", R: "3. Dev Buz Topu" }
             },
             { 
                 id: 'asit', name: '🧪 Asit', price: 1950, damage: 95, color: '#76ff03', bought: false,
-                skills: { Q: { name: "Asit Püskürtme", cd: 2500 }, E: { name: "Zehirli Havuz", cd: 6000 }, R: { name: "Eriyen Patlama", cd: 10000 } }
+                skills: { Q: "1. Asit Fışkırt", E: "2. 3 Asit Topu", R: "3. Asit İpi Çekimi" }
             },
             { 
                 id: 'klon', name: '👥 Klon Asker', price: 2800, damage: 120, color: '#ffab00', bought: false,
-                skills: { Q: { name: "Depar", cd: 3000 }, E: { name: "Sahte Klon", cd: 8000 }, R: { name: "Klon Ordusu", cd: 15000 } }
+                skills: { Q: "1. Klon Çağır", E: "2. Okçu Klon Çağır", R: "3. Dev Klon Çağır" }
             },
             { 
                 id: 'lazer', name: '🔴 Lazer', price: 4450, damage: 160, color: '#ff1744', bought: false,
-                skills: { Q: { name: "Lazer Işını", cd: 2000 }, E: { name: "Yansıtıcı Zırh", cd: 6000 }, R: { name: "Lazer Yağmuru", cd: 12000 } }
+                skills: { Q: "1. Çift Göz Lazeri", E: "2. Dev Lazer", R: "3. Her Yere Lazer" }
             },
             { 
                 id: 'morsok', name: '🟣 Mor Şok Dalgası', price: 7500, damage: 220, color: '#d500f9', bought: false,
-                skills: { Q: { name: "Şok Dalgası", cd: 3000 }, E: { name: "Çekim Alanı", cd: 7000 }, R: { name: "Mor Süpernova", cd: 14000 } }
+                skills: { Q: "1. Mor Şok Dalgası", E: "2. Mor Kılıç Saldırısı", R: "3. 3 Kat Hızlanma" }
             },
             { 
                 id: 'zaman', name: '⏳ Zaman', price: 20000, damage: 350, color: '#ffffff', bought: false,
-                skills: { Q: { name: "Zamanı Yavaşlat", cd: 5000 }, E: { name: "Zamanı Durdur", cd: 10000 }, R: { name: "Zamanı Geri Al", cd: 20000 } }
+                skills: { Q: "1. Zamanı Durdur", E: "2. Herkesi Zayıflat", R: "3. Her Yere Saat At" }
             }
         ];
 
@@ -185,23 +186,70 @@
             }
         }
 
-        function spawnNPCs(count) {
-            for (let i = 0; i < count; i++) {
-                let botId = "bot_" + botCounter;
-                npcs.push({
-                    id: botId,
-                    name: "Murat " + botCounter++,
-                    x: Math.random() * (MAP_SIZE - 300) + 150,
-                    y: Math.random() * (MAP_SIZE - 300) + 150,
-                    radius: 16,
-                    color: `hsl(${Math.random() * 360}, 75%, 55%)`,
-                    hp: 100,
-                    maxHp: 100,
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: (Math.random() - 0.5) * 2,
-                    lastShoot: Date.now() + Math.random() * 2000
-                });
+        function createNPC(type, isBoss = false) {
+            let name = "";
+            let color = "#aaa";
+            let weapon = "normal";
+            let hp = 100;
+            let radius = 16;
+            let speed = 2;
+
+            if (type === 'murat') {
+                name = "Murat " + muratCount++;
+                color = "#e53935";
+                weapon = "sword";
+            } else if (type === 'ruzgar') {
+                name = "Rüzgar " + ruzgarCount++;
+                color = "#00bcd4";
+                weapon = "bow";
+            } else if (type === 'hasan') {
+                name = "Hasan " + hasanCount++;
+                color = "#4caf50";
+                weapon = "normal";
+            } else if (type === 'kral_murat') {
+                name = "👑 Kral Murat (BOSS)";
+                color = "#b71c1c";
+                weapon = "sword";
+                hp = 2500;
+                radius = 32;
+                speed = 2.8;
+            } else if (type === 'kral_ruzgar') {
+                name = "👑 Kral Rüzgar (2. BOSS)";
+                color = "#006064";
+                weapon = "bow";
+                hp = 1800;
+                radius = 28;
+                speed = 3.2;
             }
+
+            npcs.push({
+                id: "bot_" + Math.random(),
+                name: name,
+                type: type,
+                weapon: weapon,
+                x: Math.random() * (MAP_SIZE - 300) + 150,
+                y: Math.random() * (MAP_SIZE - 300) + 150,
+                radius: radius,
+                color: color,
+                hp: hp,
+                maxHp: hp,
+                vx: (Math.random() - 0.5) * speed,
+                vy: (Math.random() - 0.5) * speed,
+                lastShoot: Date.now() + Math.random() * 2000,
+                frozenUntil: 0,
+                weakenedUntil: 0
+            });
+        }
+
+        function spawnInitialNPCs() {
+            // Bosslar
+            createNPC('kral_murat', true);
+            createNPC('kral_ruzgar', true);
+
+            // Standart botlar
+            for (let i = 0; i < 8; i++) createNPC('murat');
+            for (let i = 0; i < 8; i++) createNPC('ruzgar');
+            for (let i = 0; i < 8; i++) createNPC('hasan');
         }
 
         window.addEventListener("keydown", e => {
@@ -223,7 +271,7 @@
             document.getElementById("starterModal").classList.add("hidden");
             
             generateCity();
-            spawnNPCs(20);
+            spawnInitialNPCs();
             renderShop();
             gameRunning = true;
             requestAnimationFrame(gameLoop);
@@ -241,7 +289,7 @@
                 card.className = "shop-card";
                 card.innerHTML = `
                     <h4>${item.name}</h4>
-                    <p style="color:#aaa; font-size:0.75rem; margin:5px 0;">Q: ${item.skills.Q.name}<br>E: ${item.skills.E.name}<br>R: ${item.skills.R.name}</p>
+                    <p style="color:#aaa; font-size:0.75rem; margin:5px 0;">Q: ${item.skills.Q}<br>E: ${item.skills.E}<br>R: ${item.skills.R}</p>
                     <p style="color:#ffd700; font-weight:bold;">${item.price} Altın</p>
                     <button class="buy-btn" 
                         onclick="buyItem('${item.id}')" 
@@ -258,10 +306,11 @@
             if (gold >= item.price && !item.bought) {
                 gold -= item.price;
                 item.bought = true;
+                player.elementId = item.id;
                 player.elementName = item.name;
                 player.bulletDamage = item.damage;
                 player.bulletColor = item.color;
-                player.color = item.color; // Karakter rengini değiştirir
+                player.color = item.color;
                 
                 document.getElementById("goldText").innerText = gold;
                 document.getElementById("elementText").innerText = item.name;
@@ -270,27 +319,145 @@
         }
 
         function triggerSkill(key) {
-            if (!player.skills[key]) return;
             const now = Date.now();
-            const skill = player.skills[key];
-            
-            if (now - skill.lastUse >= skill.cooldown) {
-                skill.lastUse = now;
-                // Yetenek Alan Saldırısı Yapar
-                for (let i = 0; i < 8; i++) {
-                    let angle = (Math.PI / 4) * i;
-                    bullets.push({
-                        shooterId: player.id,
-                        x: player.x,
-                        y: player.y,
-                        vx: Math.cos(angle) * 12,
-                        vy: Math.sin(angle) * 12,
-                        radius: 8,
-                        color: player.color,
-                        damage: player.bulletDamage * 1.5
+            const worldMouseX = mouse.x + camera.x;
+            const worldMouseY = mouse.y + camera.y;
+
+            // ⚡ YILDIRIM
+            if (player.elementId === 'yildirim') {
+                if (key === 'Q') { // 1. Yıldırım Çaktır
+                    shootLightningStrike(worldMouseX, worldMouseY, 120);
+                } else if (key === 'E') { // 2. Yıldırım Okları
+                    for (let i = -2; i <= 2; i++) {
+                        let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x) + (i * 0.15);
+                        bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*16, vy: Math.sin(angle)*16, radius: 4, color: '#e040fb', damage: 60 });
+                    }
+                } else if (key === 'R') { // 3. Her Yere Yıldırım
+                    npcs.forEach(npc => shootLightningStrike(npc.x, npc.y, 100));
+                }
+            }
+            // 🌩️ ŞİMŞEK
+            else if (player.elementId === 'simsek') {
+                if (key === 'Q') { // 1. İzi Bırakan Hızlanma
+                    player.speedMultiplier = 2.5;
+                    setTimeout(() => player.speedMultiplier = 1, 4000);
+                } else if (key === 'E') { // 2. Ağır Sarı Şimşek
+                    shootLightningStrike(worldMouseX, worldMouseY, 250, '#ffeb3b');
+                } else if (key === 'R') { // 3. Şimşek Eller
+                    player.bulletDamage *= 2;
+                    setTimeout(() => player.bulletDamage /= 2, 6000);
+                }
+            }
+            // ❄️ BUZ
+            else if (player.elementId === 'buz') {
+                if (key === 'Q') { // 1. Dondur
+                    npcs.forEach(npc => {
+                        if (Math.hypot(npc.x - player.x, npc.y - player.y) < 350) npc.frozenUntil = now + 3500;
+                    });
+                } else if (key === 'E') { // 2. Buz Parçaları
+                    for (let i = 0; i < 12; i++) {
+                        let angle = (Math.PI / 6) * i;
+                        bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*10, vy: Math.sin(angle)*10, radius: 6, color: '#80d8ff', damage: 50, isIce: true });
+                    }
+                } else if (key === 'R') { // 3. Dev Buz Topu
+                    let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
+                    bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*7, vy: Math.sin(angle)*7, radius: 25, color: '#00b0ff', damage: 200, isIce: true });
+                }
+            }
+            // 🧪 ASİT
+            else if (player.elementId === 'asit') {
+                if (key === 'Q') { // 1. Asit Fışkırt
+                    for (let i = -3; i <= 3; i++) {
+                        let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x) + (i * 0.1);
+                        bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*12, vy: Math.sin(angle)*12, radius: 7, color: '#76ff03', damage: 55 });
+                    }
+                } else if (key === 'E') { // 2. 3 Asit Topu
+                    for (let i = -1; i <= 1; i++) {
+                        let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x) + (i * 0.3);
+                        bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*9, vy: Math.sin(angle)*9, radius: 14, color: '#64dd17', damage: 110 });
+                    }
+                } else if (key === 'R') { // 3. Asit İpi Çekimi
+                    npcs.forEach(npc => {
+                        if (Math.hypot(npc.x - player.x, npc.y - player.y) < 400) {
+                            npc.x = player.x + 30;
+                            npc.y = player.y + 30;
+                            npc.hp -= 100;
+                        }
                     });
                 }
             }
+            // 👥 KLON ASKER
+            else if (player.elementId === 'klon') {
+                if (key === 'Q') createClone('normal'); // 1. Normal Klon
+                else if (key === 'E') createClone('archer'); // 2. Okçu Klon
+                else if (key === 'R') createClone('giant'); // 3. Dev Klon
+            }
+            // 🔴 LAZER
+            else if (player.elementId === 'lazer') {
+                if (key === 'Q') { // 1. Çift Göz Lazeri
+                    let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
+                    bullets.push({ shooterId: 'player', x: player.x - 5, y: player.y - 5, vx: Math.cos(angle)*20, vy: Math.sin(angle)*20, radius: 5, color: '#ff1744', damage: 80 });
+                    bullets.push({ shooterId: 'player', x: player.x + 5, y: player.y + 5, vx: Math.cos(angle)*20, vy: Math.sin(angle)*20, radius: 5, color: '#ff1744', damage: 80 });
+                } else if (key === 'E') { // 2. Dev Lazer
+                    let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
+                    bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*22, vy: Math.sin(angle)*22, radius: 30, color: '#d50000', damage: 250 });
+                } else if (key === 'R') { // 3. Her Yere Lazer
+                    for (let i = 0; i < 16; i++) {
+                        let angle = (Math.PI / 8) * i;
+                        bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*18, vy: Math.sin(angle)*18, radius: 6, color: '#ff1744', damage: 100 });
+                    }
+                }
+            }
+            // 🟣 MOR ŞOK DALGASI
+            else if (player.elementId === 'morsok') {
+                if (key === 'Q') { // 1. Mor Şok Dalgası
+                    for (let i = 0; i < 20; i++) {
+                        let angle = (Math.PI / 10) * i;
+                        bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*10, vy: Math.sin(angle)*10, radius: 10, color: '#ea80fc', damage: 90 });
+                    }
+                } else if (key === 'E') { // 2. Mor Kılıç Saldırısı
+                    npcs.forEach(npc => {
+                        if (Math.hypot(npc.x - player.x, npc.y - player.y) < 180) npc.hp -= 200;
+                    });
+                } else if (key === 'R') { // 3. 3 Kat Hızlanma
+                    player.speedMultiplier = 3;
+                    setTimeout(() => player.speedMultiplier = 1, 5000);
+                }
+            }
+            // ⏳ ZAMAN
+            else if (player.elementId === 'zaman') {
+                if (key === 'Q') { // 1. Zamanı Durdur
+                    player.timeStoppedUntil = now + 4000;
+                } else if (key === 'E') { // 2. Herkesi Zayıflat
+                    npcs.forEach(npc => npc.weakenedUntil = now + 7000);
+                } else if (key === 'R') { // 3. Her Yere Saat At
+                    for (let i = 0; i < 14; i++) {
+                        let angle = (Math.PI / 7) * i;
+                        bullets.push({ shooterId: 'player', x: player.x, y: player.y, vx: Math.cos(angle)*11, vy: Math.sin(angle)*11, radius: 12, color: '#ffffff', damage: 180 });
+                    }
+                }
+            }
+        }
+
+        function shootLightningStrike(x, y, damage, color = '#e040fb') {
+            bullets.push({ shooterId: 'player', x: x, y: y, vx: 0, vy: 0, radius: 35, color: color, damage: damage, isLightning: true });
+            npcs.forEach(npc => {
+                if (Math.hypot(npc.x - x, npc.y - y) < 50) npc.hp -= damage;
+            });
+        }
+
+        function createClone(type) {
+            let radius = type === 'giant' ? 30 : 16;
+            let hp = type === 'giant' ? 400 : 120;
+            playerClones.push({
+                x: player.x + (Math.random() * 40 - 20),
+                y: player.y + (Math.random() * 40 - 20),
+                radius: radius,
+                type: type,
+                hp: hp,
+                maxHp: hp,
+                lastShoot: 0
+            });
         }
 
         function shootBullet(shooter, targetX, targetY) {
@@ -327,13 +494,20 @@
         function update() {
             if (!document.getElementById("shopModal").classList.contains("hidden")) return;
 
-            // Shift İle Hızlı Koşma
-            player.speed = keys['shift'] ? player.baseSpeed * 1.8 : player.baseSpeed;
+            const now = Date.now();
+            const isTimeStopped = now < player.timeStoppedUntil;
+
+            // Oyuncu Hareketi ve İz Bırakma
+            player.speed = (keys['shift'] ? player.baseSpeed * 1.8 : player.baseSpeed) * player.speedMultiplier;
 
             if (keys['w']) player.y -= player.speed;
             if (keys['s']) player.y += player.speed;
             if (keys['a']) player.x -= player.speed;
             if (keys['d']) player.x += player.speed;
+
+            if (player.speedMultiplier > 1) {
+                player.trail.push({ x: player.x, y: player.y, alpha: 1 });
+            }
 
             player.x = Math.max(player.radius, Math.min(MAP_SIZE - player.radius, player.x));
             player.y = Math.max(player.radius, Math.min(MAP_SIZE - player.radius, player.y));
@@ -341,11 +515,28 @@
             camera.x = player.x - canvas.width / 2;
             camera.y = player.y - canvas.height / 2;
 
+            // Klonların Mantığı
+            playerClones.forEach((clone, index) => {
+                let closestNpc = null, minDist = 400;
+                npcs.forEach(npc => {
+                    let d = Math.hypot(npc.x - clone.x, npc.y - clone.y);
+                    if (d < minDist) { minDist = d; closestNpc = npc; }
+                });
+
+                if (closestNpc && now - clone.lastShoot > 1500) {
+                    let angle = Math.atan2(closestNpc.y - clone.y, closestNpc.x - clone.x);
+                    bullets.push({ shooterId: 'player', x: clone.x, y: clone.y, vx: Math.cos(angle)*12, vy: Math.sin(angle)*12, radius: 5, color: '#ffab00', damage: clone.type === 'giant' ? 80 : 40 });
+                    clone.lastShoot = now;
+                }
+            });
+
             // Mermiler
             for (let i = bullets.length - 1; i >= 0; i--) {
                 let b = bullets[i];
-                b.x += b.vx;
-                b.y += b.vy;
+                if (!b.isLightning) {
+                    b.x += b.vx;
+                    b.y += b.vy;
+                }
 
                 if (b.shooterId !== 'player') {
                     let distToPlayer = Math.hypot(b.x - player.x, b.y - player.y);
@@ -366,18 +557,22 @@
                     if (b.shooterId !== npc.id) {
                         let dist = Math.hypot(b.x - npc.x, b.y - npc.y);
                         if (dist < b.radius + npc.radius) {
-                            npc.hp -= b.damage;
+                            let dmg = b.damage * (npc.weakenedUntil > now ? 2 : 1);
+                            npc.hp -= dmg;
+                            if (b.isIce) npc.frozenUntil = now + 2500;
                             bullets.splice(i, 1);
 
                             if (npc.hp <= 0) {
-                                npcs.splice(j, 1);
+                                let reward = npc.type.includes('kral') ? 500 : 60;
                                 if (b.shooterId === 'player') {
-                                    gold += 60;
-                                    score += 200;
+                                    gold += reward;
+                                    score += reward * 3;
                                     document.getElementById("goldText").innerText = gold;
                                     document.getElementById("scoreText").innerText = score;
                                 }
-                                spawnNPCs(1);
+                                let type = npc.type;
+                                npcs.splice(j, 1);
+                                createNPC(type);
                             }
                             break;
                         }
@@ -385,34 +580,42 @@
                 }
             }
 
-            // Murat Botları Zekası
-            const now = Date.now();
-            npcs.forEach(npc => {
-                npc.x += npc.vx;
-                npc.y += npc.vy;
+            // Bot Yapay Zekası
+            if (!isTimeStopped) {
+                npcs.forEach(npc => {
+                    if (now < npc.frozenUntil) return; // Donmuşsa hareket edemez
 
-                if (npc.x < 50 || npc.x > MAP_SIZE - 50) npc.vx *= -1;
-                if (npc.y < 50 || npc.y > MAP_SIZE - 50) npc.vy *= -1;
+                    let speedMult = now < npc.weakenedUntil ? 0.5 : 1;
+                    npc.x += npc.vx * speedMult;
+                    npc.y += npc.vy * speedMult;
 
-                if (now - npc.lastShoot > 2200) {
-                    let targets = [player, ...npcs.filter(other => other.id !== npc.id)];
-                    let closest = null;
-                    let minDist = 380;
+                    if (npc.x < 50 || npc.x > MAP_SIZE - 50) npc.vx *= -1;
+                    if (npc.y < 50 || npc.y > MAP_SIZE - 50) npc.vy *= -1;
 
-                    targets.forEach(t => {
-                        let d = Math.hypot(t.x - npc.x, t.y - npc.y);
-                        if (d < minDist) {
-                            minDist = d;
-                            closest = t;
+                    // Murat Botları (Kılıçlı - Yakın Dövüş)
+                    if (npc.weapon === 'sword') {
+                        let distToPlayer = Math.hypot(player.x - npc.x, player.y - npc.y);
+                        if (distToPlayer < 250) {
+                            npc.x += (player.x - npc.x) * 0.02 * speedMult;
+                            npc.y += (player.y - npc.y) * 0.02 * speedMult;
+                            if (distToPlayer < npc.radius + player.radius + 10 && now - npc.lastShoot > 1000) {
+                                player.hp -= npc.type.includes('kral') ? 40 : 20;
+                                npc.lastShoot = now;
+                            }
                         }
-                    });
-
-                    if (closest) {
-                        shootBullet(npc, closest.x, closest.y);
-                        npc.lastShoot = now;
                     }
-                }
-            });
+                    // Rüzgar Botları (Okçu - Uzaktan Ateş)
+                    else {
+                        if (now - npc.lastShoot > 2000) {
+                            let distToPlayer = Math.hypot(player.x - npc.x, player.y - npc.y);
+                            if (distToPlayer < 450) {
+                                shootBullet(npc, player.x, player.y);
+                                npc.lastShoot = now;
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         function draw() {
@@ -420,7 +623,7 @@
             ctx.save();
             ctx.translate(-camera.x, -camera.y);
 
-            // Yollar
+            // Izgara Yollar
             ctx.strokeStyle = "#28283d";
             ctx.lineWidth = 2;
             for (let x = 0; x < MAP_SIZE; x += 100) {
@@ -439,6 +642,23 @@
                 ctx.strokeRect(b.x, b.y, b.w, b.h);
             });
 
+            // İz Efekti
+            player.trail.forEach((t, i) => {
+                ctx.fillStyle = player.color;
+                ctx.globalAlpha = t.alpha;
+                ctx.beginPath(); ctx.arc(t.x, t.y, player.radius, 0, Math.PI * 2); ctx.fill();
+                t.alpha -= 0.05;
+                if (t.alpha <= 0) player.trail.splice(i, 1);
+            });
+            ctx.globalAlpha = 1;
+
+            // Klonlar
+            playerClones.forEach(clone => {
+                ctx.fillStyle = "#ffab00";
+                ctx.beginPath(); ctx.arc(clone.x, clone.y, clone.radius, 0, Math.PI * 2); ctx.fill();
+                drawHealthBar(clone.x, clone.y, clone.hp, clone.maxHp);
+            });
+
             // Mermiler
             bullets.forEach(b => {
                 ctx.fillStyle = b.color;
@@ -447,18 +667,28 @@
                 ctx.fill();
             });
 
-            // Murat Botları
+            // Botlar
             npcs.forEach(npc => {
                 ctx.fillStyle = npc.color;
                 ctx.beginPath();
                 ctx.arc(npc.x, npc.y, npc.radius, 0, Math.PI * 2);
                 ctx.fill();
 
-                ctx.fillStyle = "#fff";
-                ctx.font = "11px sans-serif";
-                ctx.fillText(npc.name, npc.x - 20, npc.y + 30);
+                // Silah Görselleri
+                if (npc.weapon === 'sword') {
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(npc.x, npc.y);
+                    ctx.lineTo(npc.x + 20, npc.y - 20);
+                    ctx.stroke();
+                }
 
-                drawHealthBar(npc.x, npc.y, npc.hp, npc.maxHp);
+                ctx.fillStyle = "#fff";
+                ctx.font = npc.type.includes('kral') ? "bold 14px sans-serif" : "11px sans-serif";
+                ctx.fillText(npc.name, npc.x - 25, npc.y + npc.radius + 15);
+
+                drawHealthBar(npc.x, npc.y, npc.hp, npc.maxHp, npc.radius * 2.5);
             });
 
             // Oyuncu (Sen)
